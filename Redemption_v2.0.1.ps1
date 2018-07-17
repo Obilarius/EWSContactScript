@@ -29,6 +29,7 @@ foreach ($ContactObj in $xml_contacts.ChildNodes)
     $Contact = New-Object Microsoft.Exchange.WebServices.Data.Contact($service)
 
     
+
     ### Scan Complete Name from XML to Title, MiddleName and Suffix
     $regex = "^(.*) " + $ContactObj.GivenName
     $Title = $ContactObj.CompleteName -Split $regex
@@ -43,6 +44,7 @@ foreach ($ContactObj in $xml_contacts.ChildNodes)
     $Suffix = $Suffix[1]
         
 
+    ### Zuweisungen
     $Contact.GivenName = $ContactObj.GivenName
     $Contact.Surname = $ContactObj.SurName
     $Contact.NickName = $ContactObj.NickName
@@ -72,12 +74,14 @@ foreach ($ContactObj in $xml_contacts.ChildNodes)
     $Contact.PhoneNumbers[[Microsoft.Exchange.WebServices.Data.PhoneNumberKey]::MobilePhone] = $ContactObj.MobilePhone
     $Contact.PhoneNumbers[[Microsoft.Exchange.WebServices.Data.PhoneNumberKey]::PrimaryPhone] = $ContactObj.PrimaryPhone
 
-    $Contact.PhysicalAddresses[[Microsoft.Exchange.WebServices.Data.PhysicalAddressKey]::Business].Street = $ContactObj.BusinessStreet
-    $Contact.PhysicalAddresses[[Microsoft.Exchange.WebServices.Data.PhysicalAddressKey]::Business].City = $ContactObj.BusinessCity
-    $Contact.PhysicalAddresses[[Microsoft.Exchange.WebServices.Data.PhysicalAddressKey]::Business].CountryOrRegion = $ContactObj.BusinessCountryOrRegion
-    $Contact.PhysicalAddresses[[Microsoft.Exchange.WebServices.Data.PhysicalAddressKey]::Business].PostalCode = $ContactObj.BusinessPostalCode
-    $Contact.PhysicalAddresses[[Microsoft.Exchange.WebServices.Data.PhysicalAddressKey]::Business].State = $ContactObj.BusinessState
- 
+    $Contact.PhysicalAddresses[[Microsoft.Exchange.WebServices.Data.PhysicalAddressKey]::Business] = New-Object  Microsoft.Exchange.WebServices.Data.PhysicalAddressEntry
+    $Contact.PhysicalAddresses[[Microsoft.Exchange.WebServices.Data.PhysicalAddressKey]::Business].Street = $ContactObj.BusinessStreet 
+    $Contact.PhysicalAddresses[[Microsoft.Exchange.WebServices.Data.PhysicalAddressKey]::Business].State = $ContactObj.BusinessState 
+    $Contact.PhysicalAddresses[[Microsoft.Exchange.WebServices.Data.PhysicalAddressKey]::Business].City = $ContactObj.BusinessCity 
+    $Contact.PhysicalAddresses[[Microsoft.Exchange.WebServices.Data.PhysicalAddressKey]::Business].CountryOrRegion = $ContactObj.BusinessCountryOrRegion 
+    $Contact.PhysicalAddresses[[Microsoft.Exchange.WebServices.Data.PhysicalAddressKey]::Business].PostalCode = $ContactObj.BusinessPostalCode 
+
+    $Contact.PhysicalAddresses[[Microsoft.Exchange.WebServices.Data.PhysicalAddressKey]::Home] = New-Object  Microsoft.Exchange.WebServices.Data.PhysicalAddressEntry
     $Contact.PhysicalAddresses[[Microsoft.Exchange.WebServices.Data.PhysicalAddressKey]::Home].Street = $ContactObj.HomeStreet
     $Contact.PhysicalAddresses[[Microsoft.Exchange.WebServices.Data.PhysicalAddressKey]::Home].City = $ContactObj.HomeCity
     $Contact.PhysicalAddresses[[Microsoft.Exchange.WebServices.Data.PhysicalAddressKey]::Home].CountryOrRegion = $ContactObj.HomeCountryOrRegion
@@ -88,7 +92,7 @@ foreach ($ContactObj in $xml_contacts.ChildNodes)
     $Contact.Profession = $ContactObj.Profession
     $Contact.Birthday = $ContactObj.Birthday
     $Contact.WeddingAnniversary = $ContactObj.WeddingAnniversary
-
+    
     $Contact.Body = $ContactObj.Note
     
     $Contact.Save($Contacts.Id)				
