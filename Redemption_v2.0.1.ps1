@@ -1,4 +1,5 @@
 ﻿$MailboxName = "walzenbach@arges.de"
+$xmlPath = "D:\ARGESContactList.xml"
 
 
 Import-Module "C:\Program Files\Microsoft\Exchange\Web Services\2.2\Microsoft.Exchange.WebServices.dll"
@@ -13,22 +14,17 @@ $folderid = new-object Microsoft.Exchange.WebServices.Data.FolderId([Microsoft.E
 $Contacts = [Microsoft.Exchange.WebServices.Data.Folder]::Bind($service,$folderid)
 
 
-
 ### XML
-[xml]$xml = get-content "D:\ARGESContactList.xml"
+[xml]$xml = get-content $xmlPath
 
 $xml_contacts = $xml.Report.Tablix1.Details_Collection
 $xml_contactArr = New-Object System.Collections.Generic.List[System.Object]
 
 
 
-
-
 foreach ($ContactObj in $xml_contacts.ChildNodes)
 {
     $Contact = New-Object Microsoft.Exchange.WebServices.Data.Contact($service)
-
-    
 
     ### Scan Complete Name from XML to Title, MiddleName and Suffix
     $regex = "^(.*) " + $ContactObj.GivenName
