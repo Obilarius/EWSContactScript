@@ -188,7 +188,7 @@ function Create-Contact
 
 
 				if($createContactOkay){
-					$Contact = New-Object Microsoft.Exchange.WebServices.Data.Contact 
+					$Contact = New-Object Microsoft.Exchange.WebServices.Data.Contact($service)
 
 					
 					$Contact.GivenName = $ContactObj.GivenName
