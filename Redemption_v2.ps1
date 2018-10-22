@@ -1,3 +1,5 @@
+$Credentials = New-Object System.Net.NetworkCredential('redemption','redemption')  
+
 function Connect-Exchange
 { 
     param( 
@@ -156,15 +158,21 @@ function Create-Contact
 			$cnpsPropset= new-object Microsoft.Exchange.WebServices.Data.PropertySet([Microsoft.Exchange.WebServices.Data.BasePropertySet]::FirstClassProperties)  
 			$ncCol = $service.ResolveName($ContactObj.Email1,$ParentFolderIds,[Microsoft.Exchange.WebServices.Data.ResolveNameSearchLocation]::DirectoryThenContacts,$true,$cnpsPropset);
 			$createContactOkay = $false
+Write-Host -ForegroundColor DarkCyan $ncCol.Count " -- " $ContactObj.Email1
 			if($Error.Count -eq 0){
 				if ($ncCol.Count -eq 0) {
 					$createContactOkay = $true;	
 				}
 				else{
 					foreach($Result in $ncCol){
+Write-Host -ForegroundColor DarkCyan $Result.Contact
 						if($Result.Contact -eq $null){
-							Write-host "Contact already exists " + $Result.Mailbox.Name
-							throw ("Contact already exists")
+							#Write-host "Contact already exists " + $Result.Mailbox.Name
+							#throw ("Contact already exists")
+
+                            ### Falls Kontakt schon vorhanden ist wird keine Fehlermeldung mehr angezeigt sonder der alte Kontakt wird gelöscht.
+                            Delete-Contact -MailboxName $MailboxName -EmailAddress $ContactObj.Email1 -Folder $Folder -useImpersonation -service $service -force
+                            $createContactOkay = $true;	
 						}
 						else{
 							if((Validate-EmailAddres -EmailAddress $ContactObj.Email1)){
@@ -281,7 +289,7 @@ function Create-Contact
                     $Contact.Body = $ContactObj.Note
  
 			   		$Contact.Save($Contacts.Id)				
-					Write-Host ("Contact Created: " + $ContactObj.CompleteName)
+                    Write-Host -ForegroundColor Green ("Contact Created: " + $ContactObj.CompleteName + " -- Email: " + $ContactObj.Email1)
 				}
 			}
 		}
@@ -312,15 +320,17 @@ function Delete-Contact
     param( 
     	[Parameter(Position=0, Mandatory=$true)] [string]$MailboxName,
 		[Parameter(Position=1, Mandatory=$true)] [string]$EmailAddress,
-		[Parameter(Position=2, Mandatory=$true)] [System.Management.Automation.PSCredential]$Credentials,
-		[Parameter(Position=3, Mandatory=$false)] [switch]$force,
-		[Parameter(Position=4, Mandatory=$false)] [string]$Folder,
-		[Parameter(Position=5, Mandatory=$false)] [switch]$Partial
+		[Parameter(Position=2, Mandatory=$false)] [switch]$force,
+		[Parameter(Position=3, Mandatory=$false)] [string]$Folder,
+		[Parameter(Position=4, Mandatory=$false)] [switch]$Partial,
+        [Parameter(Position=5, Mandatory=$false)] [switch]$useImpersonation,
+        [Parameter(Position=6, Mandatory=$true)]  [Microsoft.Exchange.WebServices.Data.ExchangeService]$service
     )  
  	Begin
 	{
 		#Connect
-		$service = Connect-Exchange -MailboxName $MailboxName -Credential $Credentials
+		#$service = Connect-Exchange -MailboxName $MailboxName
+
 		if($useImpersonation.IsPresent){
 			$service.ImpersonatedUserId = new-object Microsoft.Exchange.WebServices.Data.ImpersonatedUserId([Microsoft.Exchange.WebServices.Data.ConnectingIdType]::SmtpAddress, $MailboxName)
 		}
@@ -350,7 +360,7 @@ function Delete-Contact
 							if($force){
 								if(($Result.Mailbox.Address.ToLower() -eq $EmailAddress.ToLower())){
 									$contact.Delete([Microsoft.Exchange.WebServices.Data.DeleteMode]::SoftDelete)  
-									Write-Host ("Contact Deleted " + $contact.DisplayName + " : Subject-" + $contact.Subject + " : Email-" + $Result.Mailbox.Address)
+									Write-Host -ForegroundColor Yellow ("Contact Deleted: " + $contact.DisplayName + " -- Email: " + $Result.Mailbox.Address)
 								}
 								else
 								{
@@ -395,7 +405,7 @@ function Delete-Contact
 												if($force){
 													if($aResult.Mailbox.Address.ToLower() -eq $EmailAddress.ToLower()){
 														$contact.Delete([Microsoft.Exchange.WebServices.Data.DeleteMode]::SoftDelete)  
-														Write-Host ("Contact Deleted " + $contact.DisplayName + " : Subject-" + $contact.Subject + " : Email-" + $Result.Mailbox.Address)
+														Write-Host -ForegroundColor Yellow ("Contact Deleted: " + $contact.DisplayName + " -- Email: " + $Result.Mailbox.Address)
 													}
 													else
 													{
@@ -460,6 +470,25 @@ function Make-UniqueFileName{
 			if($i -eq 10000){throw "Out of Range"}
         }
 	}
+}
+
+Function Validate-EmailAddres
+{
+	 param( 
+	 	[Parameter(Position=0, Mandatory=$true)] [string]$EmailAddress
+	 )
+	 Begin
+	{
+ 		try
+		{
+  			$check = New-Object System.Net.Mail.MailAddress($EmailAddress)
+ 			 return $true
+ 		}
+ 		catch
+ 		{
+  			return $false
+ 		}
+   }
 }
 
 function Get-ContactFolder{
@@ -536,9 +565,10 @@ function Create-Contacts-from-XML
 		$service = Connect-Exchange -MailboxName $MailboxName
 
 
-        # XML Hardcoded
+        ### XML Hardcoded
         #[xml]$xml = get-content "D:\ARGESContactList.xml"
-        # XML per Parameter
+
+        ### XML per Parameter
         [xml]$xml = get-content $XMLPath
 
         $contacts = $xml.Report.Tablix1.Details_Collection
@@ -555,4 +585,15 @@ function Create-Contacts-from-XML
 
 
 ##### TESTAUFRUF
-Create-Contacts-from-XML -MailboxName walzenbach@arges.de -Folder "\Kontakte\TestKontakte" -XMLPath "D:\ARGESContactList.xml"
+Create-Contacts-from-XML -MailboxName walzenbach@arges.de -Folder "\Kontakte\TestKontakte" -XMLPath "D:\ARGESContactList2.xml"
+
+
+
+
+$MailboxName = "walzenbach@arges.de"
+$SmptAddress = $MailboxName
+
+#$service = Connect-Exchange -MailboxName $MailboxName
+#Delete-Contact -MailboxName walzenbach@arges.de -EmailAddress david.sawetzki@arges.de -Folder "\Kontakte\TestKontakte" -useImpersonation -service $service -force
+
+
